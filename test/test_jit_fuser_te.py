@@ -1146,24 +1146,27 @@ class TestTEFuser(JitTestCase):
                 return torch.randint(0, 100, shape, dtype=dtype, device=device)
             raise RuntimeError("Unhandled dtype")
 
-        dtypes = [
+        supported_dtypes = [
             torch.int8,
             torch.uint8,
             torch.int16,
             torch.int32,
             torch.int64,
             # torch.float16,
-            # torch.bfloat16,
             torch.float32,
             torch.float64,
-            # torch.bool,
-            # torch.complex32,
-            # torch.complex64,
-            # torch.complex128,
-            # torch.qint8,
-            # torch.quint8,
-            # torch.qint32,
+            torch.bool,
         ]
+        unsupported_dtypes = [
+            torch.bfloat16,
+            torch.complex32,
+            torch.complex64,
+            torch.complex128,
+            torch.qint8,
+            torch.quint8,
+            torch.qint32,
+        ]
+        dtypes = supported_dtypes + unsupported_dtypes
         unary_ops = [
             torch.sigmoid,
             torch.reciprocal,
@@ -1210,7 +1213,8 @@ class TestTEFuser(JitTestCase):
                 continue
             t = torch.jit.trace(fn, (x,))
             self.assertEqual(ref, t(x))
-            self.assertAllFused(t.graph_for(x))
+            if dtype in supported_dtypes:
+                self.assertAllFused(t.graph_for(x))
 
 if __name__ == '__main__':
     run_tests()
